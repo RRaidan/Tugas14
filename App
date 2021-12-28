@@ -1,0 +1,296 @@
+package Tugas14;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.InputMismatchException;
+import java.util.Scanner;
+
+
+public class App {
+	static Connection conn;
+	public static void main(String[] args) {
+		
+		
+		Scanner sc = new Scanner(System.in);
+		String option;
+		boolean isContinue = true;
+		String url = "jdbc:mysql://localhost:3306/db_penjualan";
+		
+		
+			try {
+				Class.forName("com.mysql.cj.jdbc.Driver");
+				conn = DriverManager.getConnection(url,"root_basic","root_pertama1");
+				System.out.println("Class Driver ditemukan");
+				
+				while(isContinue) {
+					System.out.println("\n======================");
+					System.out.println("Database Penjualan");
+					System.out.println("=======================");
+					System.out.println("[A] Lihat Data Pembelian");
+					System.out.println("[B] Tambah Data Pembelian");
+					System.out.println("[C] Hapus Data Pembelian");
+					System.out.println("[D] Ubah Data Pembelian");
+					System.out.println("[E] Cari Data Pembelian");
+					System.out.println("=======================");
+					System.out.print("\nMasukan Pilihan Anda |A|B|C|D|E|\n-> ");
+					option = sc.next().toUpperCase();
+					
+					switch(option) {
+					case "A":
+						lihatdata();
+						break;
+					case "B":
+						tambahdata();
+						break;
+					case "C":
+						hapusdata();
+						break;
+					case "D":
+						ubahdata();
+						break;
+					case "E":
+						caridata();
+						break;
+					default:
+                        System.err.println("\nMohon Anda Inputkan Ulang!");
+					}
+	                System.out.print("\nApakah Anda Masih Ingin Lanjut[y/n]?");
+	                option = sc.next();
+	                isContinue = option.equalsIgnoreCase("y");
+
+				}
+	            System.out.println("Terima kasih telah mengisi data penjualan.");
+			}
+			catch(ClassNotFoundException e) {
+	            System.err.println("Driver Error");
+	            System.exit(0);
+			}
+			catch(SQLException e) {
+				System.out.println("Gagal terkoneksi");
+			}
+		}
+		
+	//______________________________________________________________
+	
+	private static void tambahdata() throws SQLException{
+	    
+	    String text1 = "\n===TAMBAH DATA PEMBELIAN===";
+	    System.out.println(text1.toUpperCase());
+
+
+	    Transaksi t = new Transaksi();
+
+
+	    try{
+	        t.inputNoFaktur();
+	        t.inputNamaBarang();
+	        t.inputHargaBarang();
+	        t.inputJumlahBarang();
+	        t.setSubTotal(t.getHarga_barang(), t.getJumlah());
+	        t.setDiskon(t.getSubTotal());
+	        t.setTotalHarga(t.getDiskon(), t.getSubTotal());
+	        
+	       
+
+
+	        String sql = "INSERT INTO transaksi (NoFaktur, NamaBarang, HargaBarang, JumlahBarang, SubTotal, Diskon, TotalHarga) VALUES ('"+t.getNo_faktur()+"','"+t.getNama_barang()+"','"+t.getHarga_barang()+"','"+t.getJumlah()+"', '"+t.getSubTotal()+"', '"+t.getDiskon()+"', '"+t.getTotalHarga()+"')";
+
+
+	        Statement s = conn.createStatement();
+	        s.execute(sql);
+	        System.out.println("Berhasil Menginputkan Data Pembelian");
+	        
+	    }
+
+
+	    catch (SQLException e){
+	        System.err.println("\nTerjadi kesalahan input data");
+	    }
+	    catch (InputMismatchException e) {
+	        System.err.println("\nMohon dengan angka saja");
+	       }
+	       
+	}
+
+	//______________________________________________________________
+	
+	private static void hapusdata() {
+	    String text2 = "\n===HAPUS DATA PEMBELIAN===";
+	    System.out.println(text2.toUpperCase());
+	    
+	    Scanner sc = new Scanner (System.in);
+	    Transaksi t = new Transaksi();
+	    
+	    try{
+	        lihatdata();
+	        System.out.print("Ketik nomor faktur yang akan dihapus : ");
+	        t.no_faktur = sc.nextLine();
+	        
+	        String sql = "DELETE FROM transaksi WHERE NoFaktur = "+ t.no_faktur;
+	        Statement statement = conn.createStatement();
+	        
+	        
+	        if(statement.executeUpdate(sql) > 0){
+	            System.out.println("Berhasil menghapus data harga barang (Harga Barang "+t.no_faktur+")");
+	        }
+	    }
+	    catch(SQLException e){
+	         System.out.println("Terjadi kesalahan dalam menghapus data barang");
+	         System.err.println(e.getMessage());
+	         }
+	    
+	}
+	
+	//______________________________________________________________
+
+	private static void ubahdata() throws SQLException{
+	    String text3 = "\n===UBAH DATA PEMBELIAN===";
+	    System.out.println(text3.toUpperCase());
+	    
+	    Scanner sc = new Scanner (System.in);
+	    Transaksi t = new Transaksi();
+
+
+	    try{
+	        lihatdata();
+	        System.out.print("Masukkan No Faktur Pembelian yang Akan diubah : ");
+	        t.no_faktur = sc.nextLine();
+
+
+	        String sql = "SELECT * FROM transaksi WHERE NoFaktur = " +t.no_faktur;
+
+
+	        Statement statement = conn.createStatement();
+	        ResultSet result = statement.executeQuery(sql);
+
+
+	        if(result.next()){
+	
+
+
+	            System.out.print("NoFaktur ["+result.getString("NoFaktur")+"]\t: ");
+	            t.no_faktur = sc.nextLine();
+
+
+	            System.out.print("NamaBarang ["+result.getString("NamaBarang")+"]\t: ");
+	            t.nama_barang = sc.nextLine();
+	            
+	            System.out.print("HargaBarang ["+result.getInt("HargaBarang")+"]\t: ");
+	            t.harga_barang = sc.nextLong();
+
+
+	            System.out.print("JumlahBarang ["+result.getInt("JumlahBarang")+"]\t: ");
+	            t.jumlah = sc.nextLong();
+
+	            System.out.print("SubTotal ["+result.getInt("SubTotal")+"]\t: ");
+	            t.subtotal = sc.nextLong();
+	            
+	            System.out.print("Diskon ["+result.getInt("Diskon")+"]\t: ");
+	            t.diskon = sc.nextLong();
+	            
+	            System.out.print("TotalHarga ["+result.getInt("TotalHarga")+"]\t: ");
+	            t.total_harga = sc.nextLong();
+	            
+
+
+	            System.out.println("\n");
+
+
+	            sql = "UPDATE transaksi SET   NamaBarang='"+t.nama_barang+"', HargaBarang='"+t.harga_barang+"', JumlahBarang='"+t.jumlah+"' , SubTotal='"+t.subtotal+"', Diskon='"+t.diskon+"' , TotalHarga='"+t.total_harga+"' WHERE NoFaktur='"+t.no_faktur+"' ";
+	            
+
+
+	            if(statement.executeUpdate(sql) > 0){
+	                System.out.println("Data Berhasil diperbarui!");
+	            }
+	        }
+	        statement.close();
+	    }
+
+
+	    catch (SQLException e){
+	        System.err.println("Terjadi kesalahan Ubah data");
+	        System.err.println(e.getMessage());
+	        
+	    }
+	    
+
+	}
+
+
+	//______________________________________________________________
+
+	private static void caridata () throws SQLException {
+	    String text4 = "\n===Cari Data PEMBELIAN===";
+	    System.out.println(text4.toUpperCase());
+	    
+	    Scanner sc = new Scanner (System.in);
+	            
+	    System.out.print("Masukkan Nomor Faktur : ");
+	    
+	    String keyword = sc.nextLine();
+	    Statement statement = conn.createStatement();
+	    String sql = "SELECT * FROM transaksi WHERE NoFaktur LIKE '%"+keyword+"%'";
+	    ResultSet result = statement.executeQuery(sql); 
+	            
+	    while(result.next()){
+
+	        System.out.println("\nNomor Faktur\t");
+	        System.out.println(result.getString("NoFaktur"));
+	        System.out.println("\nNama Barang\t");
+	        System.out.println(result.getString("NamaBarang"));
+	        System.out.println("\nHarga Barang\t");
+	        System.out.println(result.getInt("HargaBarang"));
+	        System.out.println("\nJumlah Barang\t");
+	        System.out.println(result.getInt("JumlahBarang"));
+	        System.out.println("\nSub Total\t");
+	        System.out.println(result.getInt("Subtotal"));
+	        System.out.println("\nDiskon\t");
+	        System.out.println(result.getInt("Diskon"));
+	        System.out.println("\nTotal Harga\t");
+	        System.out.println(result.getInt("Total Harga"));
+	        
+	        System.out.println("\n--------------------------------------");
+	    }
+	    
+	}
+
+
+	//______________________________________________________________
+
+	private static void lihatdata() throws SQLException{
+	    String text5 = "\n===DATA SELURUH PEMBELIAN===";
+	    System.out.println(text5.toUpperCase());
+
+
+	    String sql = "SELECT * FROM transaksi";
+	    Statement statement = conn.createStatement();
+	    ResultSet result = statement.executeQuery(sql);
+
+
+	    while (result.next()){
+	    	 System.out.println("\nNomor Faktur\t");
+		        System.out.println(result.getString("NoFaktur"));
+		        System.out.println("\nNama Barang\t");
+		        System.out.println(result.getString("NamaBarang"));
+		        System.out.println("\nHarga Barang\t");
+		        System.out.println(result.getInt("HargaBarang"));
+		        System.out.println("\nJumlah Barang\t");
+		        System.out.println(result.getInt("JumlahBarang"));
+		        System.out.println("\nSub Total\t");
+		        System.out.println(result.getInt("Subtotal"));
+		        System.out.println("\nDiskon\t");
+		        System.out.println(result.getInt("Diskon"));
+		        System.out.println("\nTotal Harga\t");
+		        System.out.println(result.getInt("Total Harga"));
+		        
+		        System.out.println("\n--------------------------------------");
+	    }
+	}
+
+
+	
+}
